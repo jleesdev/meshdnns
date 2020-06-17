@@ -5,10 +5,12 @@ import pandas as pd
 import torch
 from torch_geometric.data import InMemoryDataset, Data
 from tqdm import tqdm
-
 from psbody.mesh import Mesh
-from utils.coma.utils import get_vert_connectivity
-from utils.coma.transform_clsf import Normalize
+import os
+import sys
+sys.path.insert(1, './utils/coma')
+from utils import get_vert_connectivity
+from transform_clsf import Normalize
 
 class ComaDataset(InMemoryDataset):
     def __init__(self, data_path, dtype='train', split='clsf', transform=Normalize(), pre_transform=None):
@@ -17,7 +19,7 @@ class ComaDataset(InMemoryDataset):
         self.split = split
         self.transform = transform
         self.pre_tranform = pre_transform
-        self.processed_dir = './processed/coma/'
+        # self.processed_dir = './processed/coma/'
         # Downloaded data is present in following format root_dir/*/*/*.py
         self.filepaths, self.categories = self.gather_paths()
         super(ComaDataset, self).__init__(data_path, transform, pre_transform)
@@ -43,6 +45,10 @@ class ComaDataset(InMemoryDataset):
             self.data = [self.transform(td) for td in self.data]
 
     @property
+    def processed_dir(self):
+        return os.path.join('./', 'processed/coma')
+    
+    @property
     def raw_file_names(self):
         all_fps = []
         for key in self.filepaths.keys() :
@@ -63,12 +69,13 @@ class ComaDataset(InMemoryDataset):
         dxs = df['dx']
         categories = sorted(set(dxs))
         for i in range(len(df)) :
-            if dxs[i] in datapaths.keys() :
+            if dxs[i] not in filepaths.keys() :
                 filepaths[dxs[i]] = []
                 filepaths[dxs[i]].append(fps[i])
             else :
                 filepaths[dxs[i]].append(fps[i])
 
+        print(self.dtype)
         print('total number of dataset: %d'%(len(df)))
         for key in filepaths.keys() :
             print('%s: %d.'%(key, len(filepaths[key])))
@@ -99,11 +106,12 @@ class ComaDataset(InMemoryDataset):
             torch.save(self.collate(dataset), self.processed_paths[0])
             torch.save(norm_dict, self.processed_paths[2])
         elif self.dtype == 'test' :
-            torch.save(self.collate(test_data), self.processed_paths[1])
+            torch.save(self.collate(dataset), self.processed_paths[1])
 
 
 def prepare_clsf_dataset(path):
-    ComaDataset(path, split='clsf', pre_transform=None, transform=None)
+    ComaDataset(path, dtype='train', split='clsf', pre_transform=None, transform=None)
+    ComaDataset(path, dtype='test', split='clsf', pre_transform=None, transform=None)
 
 
 if __name__ == '__main__':
@@ -114,7 +122,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     split = args.split
-    data_path = args.data_dir
+    data_path = args.data_path
     if split == 'clsf':
         prepare_clsf_dataset(data_path)
     else:

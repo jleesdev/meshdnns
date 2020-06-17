@@ -1,4 +1,6 @@
 .DS_Store
 .ipynb_checkpoints
-.csv
-.ipynb
+*.csv
+*.ipynb
+__pycache__
+processed
