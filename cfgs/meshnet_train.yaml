@@ -1,0 +1,28 @@
+# CUDA
+cuda_devices: '0'   # multi-gpu training is available
+
+# dataset
+dataset:
+  data_root: 'data/ADNI2_MeshNet/'
+  augment_data: true
+  max_faces: 1460
+
+# result
+ckpt_root: 'ckpts/'
+
+# MeshNet
+MeshNet:
+  structural_descriptor:
+    num_kernel: 64
+    sigma: 0.2
+  mesh_convolution:
+    aggregation_method: 'Concat'  # Concat/Max/Average
+
+# train
+lr: 0.01
+momentum: 0.9
+weight_decay: 0.0005
+batch_size: 64
+max_epoch: 300
+milestones: [30, 60]
+gamma: 0.1
