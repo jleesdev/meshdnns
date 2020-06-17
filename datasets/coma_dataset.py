@@ -109,22 +109,23 @@ class ComaDataset(InMemoryDataset):
             torch.save(self.collate(dataset), self.processed_paths[1])
 
 
-def prepare_clsf_dataset(path):
-    ComaDataset(path, dtype='train', split='clsf', pre_transform=None, transform=None)
-    ComaDataset(path, dtype='test', split='clsf', pre_transform=None, transform=None)
+def prepare_clsf_dataset(path, dtype):
+    ComaDataset(path, dtype=dtype, split='clsf', pre_transform=None, transform=None)
 
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='ADNI2 Data preparation for Convolutional Mesh Autoencoders')
     parser.add_argument('-s', '--split', default='clsf', help='split can be clsf')
+    parser.add_argument('-dt', '--data_type', default='train', help='train or test')
     parser.add_argument('-d', '--data_path', help='path where the downloaded data is stored, or csv file contains information of data files')
 
     args = parser.parse_args()
     split = args.split
     data_path = args.data_path
+    dtype = args.data_type
     if split == 'clsf':
-        prepare_clsf_dataset(data_path)
+        prepare_clsf_dataset(data_path, dtype)
     else:
         raise Exception("Only clsf split are supported")
 
