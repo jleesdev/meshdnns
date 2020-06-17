@@ -7,12 +7,13 @@ from torch_geometric.data import InMemoryDataset, Data
 from tqdm import tqdm
 
 from psbody.mesh import Mesh
-from utils import get_vert_connectivity
-from transform_clsf import Normalize
+from utils.coma.utils import get_vert_connectivity
+from utils.coma.transform_clsf import Normalize
 
 class ComaDataset(InMemoryDataset):
-    def __init__(self, root_dir, dtype='train', split='sliced', split_term='sliced', nVal = 100, transform=None, pre_transform=None):
-        self.root_dir = root_dir
+    def __init__(self, data_path, dtype='train', split='clsf', split_term='clsf', nVal = 0, transform=None, pre_transform=None):
+        self.data_path = data_path
+        self.dtype = dtype
         self.split = split
         self.split_term = split_term
         self.nVal = nVal
@@ -20,11 +21,10 @@ class ComaDataset(InMemoryDataset):
         self.pre_tranform = pre_transform
         # Downloaded data is present in following format root_dir/*/*/*.py
         self.data_file = self.gather_paths(self.split_term)
-        super(ComaDataset, self).__init__(root_dir, transform, pre_transform)
+        super(ComaDataset, self).__init__(data_path, transform, pre_transform)
+        
         if dtype == 'train':
             data_path = self.processed_paths[0]
-        #elif dtype == 'val':
-        #    data_path = self.processed_paths[1]
         elif dtype == 'test':
             data_path = self.processed_paths[1]
         else:
@@ -53,7 +53,6 @@ class ComaDataset(InMemoryDataset):
     def gather_paths(self, st):
         datapaths = dict()
         count = 0
-        if st == 'clsfb' :
             datapaths['ad'] = dict()
             datapaths['cn'] = dict()
             datapaths['ad']['train'] = []
@@ -110,22 +109,23 @@ class ComaDataset(InMemoryDataset):
         torch.save(self.collate(test_data), self.processed_paths[1])
         torch.save(norm_dict, self.processed_paths[2])
 
-def prepare_clsfb_dataset(path):
-    ComaDataset(path, split='clsfb', split_term='clsfb', pre_transform=Normalize())
+def prepare_clsf_dataset(path, st):
+    ComaDataset(path, split='clsf', split_term=st, pre_transform=Normalize())
 
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='ADNI2 Data preparation for Convolutional Mesh Autoencoders')
-    parser.add_argument('-s', '--split', default='clsfb', help='split can be gnrt, clsf, lgtd, lgtdvc, or lgtddx')
-    parser.add_argument('-d', '--data_dir', help='path where the downloaded data is stored')
+    parser.add_argument('-s', '--split', default='clsf', help='split can be clsf')
+    parser.add_argument('-st', '--split_term', default='clsf', help='name of dataset')
+    parser.add_argument('-d', '--data_path', help='path where the downloaded data is stored, or csv file contains information of data files')
 
     args = parser.parse_args()
     split = args.split
-    data_dir = args.data_dir
-    if split == 'clsfb':
-        prepare_clsfb_dataset(data_dir)
+    data_path = args.data_dir
+    if split == 'clsf':
+        prepare_clsf_dataset(data_path, args.spilt_term)
     else:
-        raise Exception("Only gnrt, clsf, and lgtd split are supported")
+        raise Exception("Only clsf split are supported")
 
 
