@@ -78,7 +78,7 @@ class Pool(MessagePassing):
 class CoMA(torch.nn.Module):
 
     def __init__(self, dataset, config, downsample_matrices, upsample_matrices, adjacency_matrices, num_nodes):
-        super(Coma, self).__init__()
+        super(CoMA, self).__init__()
         self.n_layers = config['n_layers']
         self.filters = config['num_conv_filters']
         self.filters.insert(0, dataset.num_features)  # To get initial features per node
@@ -117,6 +117,12 @@ class CoMA(torch.nn.Module):
         x = x.reshape(x.shape[0], self.enc_lin.in_features)
         x = F.relu(self.enc_lin(x))
         return x
+    
+    def reset_parameters(self):
+        torch.nn.init.normal_(self.enc_lin.weight, 0, 0.1)
+        # torch.nn.init.normal_(self.dec_lin.weight, 0, 0.1)
+        torch.nn.init.normal_(self.clsf_out.weight, 0, 0.1)
+    
 '''
     def decoder(self, x):
         x = F.relu(self.dec_lin(x))
@@ -127,7 +133,5 @@ class CoMA(torch.nn.Module):
         x = self.cheb_dec[-1](x, self.A_edge_index[-1], self.A_norm[-1])
         return x
 '''
-    def reset_parameters(self):
-        torch.nn.init.normal_(self.enc_lin.weight, 0, 0.1)
-        # torch.nn.init.normal_(self.dec_lin.weight, 0, 0.1)
-        torch.nn.init.normal_(self.clsf_out.weight, 0, 0.1)
+
+    

@@ -5,16 +5,21 @@ import numpy as np
 import torch.nn.functional as F
 from torch_geometric.data import DataLoader
 from psbody.mesh import Mesh, MeshViewers
-import mesh_operations
-from config_parser import read_config
-from data_clsf import ComaDataset
-from model_clsf import Coma
-from transform_clsf import Normalize
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 import time
 import sklearn
 import torch.backends.cudnn as cudnn
+
+import sys
+sys.path.insert(1, './utils/coma')
+sys.path.insert(1, './models')
+sys.path.insert(1, './datasets')
+from coma_dataset import ComaDataset
+from coma_net import CoMA
+from transform_clsf import Normalize
+import mesh_operations
+from config_parser import read_config
 
 torch.manual_seed(1)
 cudnn.benchmark = False
@@ -93,21 +98,19 @@ def main(args):
     num_nodes = [len(M[i].v) for i in range(len(M))]
 
     print('Loading Dataset')
-    if args.data_dir:
-        data_dir = args.data_dir
-    else:
-        data_dir = config['data_dir']
+    if not args.train_data or not args.test_data:
+        raise Exception('No files for datasets')
 
     normalize_transform = Normalize()
-    dataset = ComaDataset(data_dir, dtype='train', split=args.split, split_term=args.split_term, pre_transform=normalize_transform)
-    dataset_test = ComaDataset(data_dir, dtype='test', split=args.split, split_term=args.split_term, pre_transform=normalize_transform)
+    dataset = ComaDataset(args.train_data, dtype='train', split=args.split, pre_transform=normalize_transform)
+    dataset_test = ComaDataset(args.test_data, dtype='test', split=args.split, pre_transform=normalize_transform)
     train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=workers_thread)
     val_loader = DataLoader(dataset_test, batch_size=1, shuffle=True, num_workers=workers_thread)
     test_loader = DataLoader(dataset_test, batch_size=1, shuffle=False, num_workers=workers_thread)
 
     print('Loading model')
     start_epoch = 1
-    coma = Coma(dataset, config, D_t, U_t, A_t, num_nodes)
+    coma = CoMA(dataset, config, D_t, U_t, A_t, num_nodes)
     if opt == 'adam':
         optimizer = torch.optim.Adam(coma.parameters(), lr=lr, weight_decay=weight_decay)
     elif opt == 'sgd':
@@ -127,7 +130,8 @@ def main(args):
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
                     state[k] = v.to(device)
-    coma.cuda()
+                    
+    coma.to(device)
 
     if eval_flag:
         val_loss = evaluate(coma, output_dir, test_loader, dataset_test, template_mesh, device, visualize)
@@ -140,8 +144,8 @@ def main(args):
 
     from datetime import datetime
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-    log_dir = os.path.join('runs/clsf', current_time)
-    writer = SummaryWriter(log_dir+'raw_ds2_e300')
+    log_dir = os.path.join('runs/coma/clsf', current_time)
+    writer = SummaryWriter(log_dir+'')
 
     t = time.time()
     num_total_params = sum(p.numel() for p in coma.parameters())
@@ -231,11 +235,11 @@ def evaluate(coma, output_dir, test_loader, dataset, template_mesh, device, epoc
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Pytorch Trainer for Convolutional Mesh Autoencoders')
-    parser.add_argument('-c', '--conf', default='cfgs/clsf.cfg', help='path of config file')
-    parser.add_argument('-s', '--split', default='clsfb', help='split can be gnrt, clsf, or lgtd')
-    parser.add_argument('-st', '--split_term', default='clsfb', help='split can be gnrt, clsf, or lgtd')
-    parser.add_argument('-d', '--data_dir', default='data/ADNI2_data', help='path where the downloaded data is stored')
-    parser.add_argument('-cp', '--checkpoint_dir', help='path where checkpoints file need to be stored')
+    parser.add_argument('-c', '--conf', default='cfgs/coma.cfg', help='path of config file')
+    parser.add_argument('-s', '--split', default='clsf', help='split can be gnrt, clsf, or lgtd')
+    parser.add_argument('-trnd', '--train_data', default='pcs_mesh_mask_vols_train_set_1.csv', help='path where the downloaded data is stored')
+    parser.add_argument('-tstd', '--test_data', default='pcs_mesh_mask_vols_test_set_1.csv', help='path where the downloaded data is stored')
+    parser.add_argument('-cp', '--checkpoint_dir', default='./ckpts/coma/default/', help='path where checkpoints file need to be stored')
 
     args = parser.parse_args()
 

@@ -4,3 +4,5 @@
 *.ipynb
 __pycache__
 processed
+ckpts
+runs

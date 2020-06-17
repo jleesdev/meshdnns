@@ -13,7 +13,7 @@ from utils import get_vert_connectivity
 from transform_clsf import Normalize
 
 class ComaDataset(InMemoryDataset):
-    def __init__(self, data_path, dtype='train', split='clsf', transform=Normalize(), pre_transform=None):
+    def __init__(self, data_path, dtype='train', split='clsf', transform=None, pre_transform=None):
         self.data_path = data_path
         self.dtype = dtype
         self.split = split
@@ -25,23 +25,18 @@ class ComaDataset(InMemoryDataset):
         super(ComaDataset, self).__init__(data_path, transform, pre_transform)
 
         if dtype == 'train':
-            data_path = self.processed_paths[0]
+            processed_data_path = self.processed_paths[0]
         elif dtype == 'test':
-            data_path = self.processed_paths[1]
+            processed_data_path = self.processed_paths[1]
         else:
             raise Exception("train and test are supported data types")
 
         norm_path = self.processed_paths[2]
         norm_dict = torch.load(norm_path)
         self.mean, self.std = norm_dict['mean'], norm_dict['std']
-        self.data, self.slices = torch.load(data_path)
+        self.data, self.slices = torch.load(processed_data_path)
 
         if self.transform is not None:
-            if hasattr(self.transform, 'mean') and hasattr(self.transform, 'std'):
-                if self.tranform.mean is None:
-                    self.tranform.mean = self.mean
-                if self.transform.std is None:
-                    self.tranform.std = self.std
             self.data = [self.transform(td) for td in self.data]
 
     @property
@@ -103,14 +98,34 @@ class ComaDataset(InMemoryDataset):
             mean_train = torch.Tensor(np.mean(vertices, axis=0))
             std_train = torch.Tensor(np.std(vertices, axis=0))
             norm_dict = {'mean': mean_train, 'std': std_train}
+            
+            if hasattr(self.pre_transform, 'mean') and hasattr(self.pre_transform, 'std'):
+                if self.pre_transform.mean is None:
+                    self.pre_transform.mean = mean_train
+                if self.pre_transform.std is None:
+                    self.pre_transform.std = std_train
+                self.data = [self.pre_transform(td) for td in dataset]
+                
             torch.save(self.collate(dataset), self.processed_paths[0])
             torch.save(norm_dict, self.processed_paths[2])
+            
         elif self.dtype == 'test' :
+            norm_path = self.processed_paths[2]
+            norm_dict = torch.load(norm_path)
+            mean_train, std_train = norm_dict['mean'], norm_dict['std']
+            
+            if hasattr(self.pre_transform, 'mean') and hasattr(self.pre_transform, 'std'):
+                if self.pre_transform.mean is None:
+                    self.pre_transform.mean = mean_train
+                if self.pre_transform.std is None:
+                    self.pre_transform.std = std_train
+                self.data = [self.pre_transform(td) for td in dataset]
+                
             torch.save(self.collate(dataset), self.processed_paths[1])
 
 
 def prepare_clsf_dataset(path, dtype):
-    ComaDataset(path, dtype=dtype, split='clsf', pre_transform=None, transform=None)
+    ComaDataset(path, dtype=dtype, split='clsf', pre_transform=Normalize(), transform=None)
 
 
 if __name__ == '__main__':
