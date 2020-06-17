@@ -3,7 +3,7 @@ Four different mesh-specific dnn models (CoMA, SpiralNet++, MeshCNN, and MeshNet
 
 #### data samples
 * format: .ply  
-* details: V 2922, F 5840, E 8760.
+* details: v 2922, f 5840, e 8760.
 
 #### training
 * coma  
