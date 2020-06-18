@@ -3,6 +3,8 @@ import os
 import numpy as np
 from glob import glob
 import openmesh as om
+import sys
+sys.path.insert(1, 'utils/sprinalnet/')
 
 
 def makedirs(folder):
@@ -26,7 +28,7 @@ def to_edge_index(mat):
 
 
 def preprocess_spiral(face, seq_length, vertices=None, dilation=1):
-    from .generate_spiral_seq import extract_spirals
+    from generate_spiral_seq import extract_spirals
     assert face.shape[1] == 3
     if vertices is not None:
         mesh = om.TriMesh(np.array(vertices), np.array(face))

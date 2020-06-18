@@ -13,10 +13,13 @@ class Writer:
             tmp_log_list = glob(os.path.join(args.out_dir, 'log*'))
             if len(tmp_log_list) == 0:
                 self.log_file = os.path.join(
-                    args.out_dir, 'log_{:s}.txt'.format(
+                    args.out_dir, 'log_{:s}_{:s}.txt'.format(args.exp_name,
                         time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())))
             else:
                 self.log_file = tmp_log_list[0]
+                
+            with open(self.log_file, 'a') as log_file:
+                log_file.write('{:s}\n\n'.format(args.exp_name))
 
     def print_info(self, info):
         message = 'Epoch: {}/{}, Duration: {:.3f}s, Train Loss: {:.4f}, Test Loss: {:.4f}' \

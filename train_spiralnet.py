@@ -118,7 +118,7 @@ parser.add_argument('--train_data', type=str, default='pcs_mesh_mask_vols_train_
 parser.add_argument('--test_data', type=str, default='pcs_mesh_mask_vols_test_set_1.csv')
 parser.add_argument('--split', type=str, default='clsf')
 parser.add_argument('--n_threads', type=int, default=4)
-parser.add_argument('--device_idx', type=int, default=-1)
+parser.add_argument('--device_idx', type=int, default=1)
 
 # network hyperparameters
 parser.add_argument('--out_channels',
@@ -147,9 +147,11 @@ parser.add_argument('--seed', type=int, default=1)
 args = parser.parse_args()
 
 args.work_dir = osp.dirname(osp.realpath(__file__))
+args.out_dir = osp.join(args.work_dir, 'logs', 'spiralnet')
 args.checkpoints_dir = osp.join(args.work_dir, 'ckpts', 'spiralnet', args.exp_name)
 print(args)
 
+utils.makedirs(args.out_dir)
 utils.makedirs(args.checkpoints_dir)
 
 writer = writer.Writer(args)
@@ -162,9 +164,8 @@ cudnn.benchmark = False
 cudnn.deterministic = True
 
 # load dataset
-template_fp = osp.join('./template', 'L_Hipp_template_2922.ply')
-meshdata = SpiralNetDatasets(train_data=args.train_data,
-                             test_data=args.test_data,
+template_fp = osp.join('./template', 'L_Hipp_template_om_2922.ply')
+meshdata = SpiralNetDatasets(args.train_data, args.test_data,
                              template_fp, split=args.split)
 train_loader = DataLoader(meshdata.train_dataset,
                           batch_size=args.batch_size,

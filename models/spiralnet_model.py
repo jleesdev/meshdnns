@@ -107,7 +107,7 @@ class SpiralNet(nn.Module):
                                   self.spiral_indices[idx]))
         self.en_layers.append(
             nn.Linear(self.num_vert * out_channels[-1], latent_channels))
-'''
+        '''
         # decoder
         self.de_layers = nn.ModuleList()
         self.de_layers.append(
@@ -124,7 +124,7 @@ class SpiralNet(nn.Module):
                                   self.spiral_indices[-idx - 1]))
         self.de_layers.append(
             SpiralConv(out_channels[0], in_channels, self.spiral_indices[0]))
-'''
+        '''
         self.clsf_out = torch.nn.Linear(latent_channels, 2)
 
         self.reset_parameters()
@@ -144,7 +144,7 @@ class SpiralNet(nn.Module):
                 x = x.view(-1, layer.weight.size(1))
                 x = layer(x)
         return x
-'''
+    '''
     def decoder(self, x):
         num_layers = len(self.de_layers)
         num_features = num_layers - 2
@@ -157,7 +157,7 @@ class SpiralNet(nn.Module):
             else:
                 x = layer(x)
         return x
-'''
+    '''
     def forward(self, data, *indices):
         z = self.encoder(data.x)
         # out = self.decoder(z)
