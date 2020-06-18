@@ -84,7 +84,7 @@ class SpiralDeblock(nn.Module):
 class SpiralNet(nn.Module):
     def __init__(self, in_channels, out_channels, latent_channels,
                  spiral_indices, down_transform, up_transform):
-        super(Classifier, self).__init__()
+        super(SpiralNet, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.latent_channels = latent_channels

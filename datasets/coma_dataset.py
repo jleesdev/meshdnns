@@ -19,9 +19,7 @@ class ComaDataset(InMemoryDataset):
         self.split = split
         self.transform = transform
         self.pre_tranform = pre_transform
-        # self.processed_dir = './processed/coma/'
-        # Downloaded data is present in following format root_dir/*/*/*.py
-        self.filepaths, self.categories = self.gather_paths()
+        self.filepaths, self.categories = self.gather_paths(self.split)
         super(ComaDataset, self).__init__(data_path, transform, pre_transform)
 
         if dtype == 'train':
@@ -42,7 +40,7 @@ class ComaDataset(InMemoryDataset):
     @property
     def processed_dir(self):
         return os.path.join('./', 'processed/coma')
-    
+
     @property
     def raw_file_names(self):
         all_fps = []
@@ -52,11 +50,11 @@ class ComaDataset(InMemoryDataset):
 
     @property
     def processed_file_names(self):
-        processed_files = ['training.pt', 'test.pt', 'norm.pt']
+        processed_files = ['training.pt', 'testing.pt', 'norm.pt']
         processed_files = [self.split+'_'+pf for pf in processed_files]
         return processed_files
 
-    def gather_paths(self):
+    def gather_paths(self, split):
         filepaths = dict()
 
         df = pd.read_csv(self.data_path)
@@ -98,29 +96,29 @@ class ComaDataset(InMemoryDataset):
             mean_train = torch.Tensor(np.mean(vertices, axis=0))
             std_train = torch.Tensor(np.std(vertices, axis=0))
             norm_dict = {'mean': mean_train, 'std': std_train}
-            
+
             if hasattr(self.pre_transform, 'mean') and hasattr(self.pre_transform, 'std'):
                 if self.pre_transform.mean is None:
                     self.pre_transform.mean = mean_train
                 if self.pre_transform.std is None:
                     self.pre_transform.std = std_train
                 self.data = [self.pre_transform(td) for td in dataset]
-                
+
             torch.save(self.collate(dataset), self.processed_paths[0])
             torch.save(norm_dict, self.processed_paths[2])
-            
+
         elif self.dtype == 'test' :
             norm_path = self.processed_paths[2]
             norm_dict = torch.load(norm_path)
             mean_train, std_train = norm_dict['mean'], norm_dict['std']
-            
+
             if hasattr(self.pre_transform, 'mean') and hasattr(self.pre_transform, 'std'):
                 if self.pre_transform.mean is None:
                     self.pre_transform.mean = mean_train
                 if self.pre_transform.std is None:
                     self.pre_transform.std = std_train
                 self.data = [self.pre_transform(td) for td in dataset]
-                
+
             torch.save(self.collate(dataset), self.processed_paths[1])
 
 

@@ -16,7 +16,7 @@ sys.path.insert(1, './utils/coma')
 sys.path.insert(1, './models')
 sys.path.insert(1, './datasets')
 from coma_dataset import ComaDataset
-from coma_net import CoMA
+from coma_model import CoMA
 from transform_clsf import Normalize
 import mesh_operations
 from config_parser import read_config
@@ -105,7 +105,6 @@ def main(args):
     dataset = ComaDataset(args.train_data, dtype='train', split=args.split, pre_transform=normalize_transform)
     dataset_test = ComaDataset(args.test_data, dtype='test', split=args.split, pre_transform=normalize_transform)
     train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=workers_thread)
-    val_loader = DataLoader(dataset_test, batch_size=1, shuffle=True, num_workers=workers_thread)
     test_loader = DataLoader(dataset_test, batch_size=1, shuffle=False, num_workers=workers_thread)
 
     print('Loading model')
@@ -130,7 +129,7 @@ def main(args):
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
                     state[k] = v.to(device)
-                    
+
     coma.to(device)
 
     if eval_flag:
@@ -144,7 +143,7 @@ def main(args):
 
     from datetime import datetime
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-    log_dir = os.path.join('runs/coma/clsf', current_time)
+    log_dir = os.path.join('runs/coma/', 'clsf-' + current_time)
     writer = SummaryWriter(log_dir+'')
 
     t = time.time()

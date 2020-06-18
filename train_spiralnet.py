@@ -12,17 +12,21 @@ import sklearn
 import torch_geometric.transforms as T
 from psbody.mesh import Mesh
 
-from classification import Classifier
-from datasets import ClsfData
-from utils import utils, writer, DataLoader, mesh_sampling
+import sys
+sys.path.insert(1, './utils/spiralnet')
+sys.path.insert(1, './models')
+sys.path.insert(1, './datasets')
+from spiralnet_model import SpiralNet
+from spiralnet_dataset import SpiralNetDatasets, DataLoader
+import utils, writer, mesh_sampling
 
 def run(model, train_loader, test_loader, epochs, optimizer, scheduler, writer,
         device):
 
     from datetime import datetime
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-    log_dir = os.path.join('runs/clsf', current_time)
-    tsbwriter = SummaryWriter(log_dir+'-raw_seq16_wd0.01')
+    log_dir = os.path.join('runs/spiralnet/', 'clsf-' + current_time)
+    tsbwriter = SummaryWriter(log_dir+'')
 
     train_losses, test_losses = [], []
     best_test_acc = float('inf')
@@ -109,9 +113,10 @@ def test(model, loader, device):
 #################################################################################
 
 parser = argparse.ArgumentParser(description='mesh classifier')
-parser.add_argument('--exp_name', type=str, default='clsf_raw_seq16_wd0.01')
-parser.add_argument('--dataset', type=str, default='ADNI2_raw')
-parser.add_argument('--split', type=str, default='clsfb')
+parser.add_argument('--exp_name', type=str, default='default')
+parser.add_argument('--train_data', type=str, default='pcs_mesh_mask_vols_train_set_1.csv')
+parser.add_argument('--test_data', type=str, default='pcs_mesh_mask_vols_test_set_1.csv')
+parser.add_argument('--split', type=str, default='clsf')
 parser.add_argument('--n_threads', type=int, default=4)
 parser.add_argument('--device_idx', type=int, default=-1)
 
@@ -142,12 +147,9 @@ parser.add_argument('--seed', type=int, default=1)
 args = parser.parse_args()
 
 args.work_dir = osp.dirname(osp.realpath(__file__))
-args.data_fp = osp.join(args.work_dir, '..', 'data', args.dataset)
-args.out_dir = osp.join(args.work_dir, 'out', args.exp_name)
-args.checkpoints_dir = osp.join(args.out_dir, 'checkpoints')
+args.checkpoints_dir = osp.join(args.work_dir, 'ckpts', 'spiralnet', args.exp_name)
 print(args)
 
-utils.makedirs(args.out_dir)
 utils.makedirs(args.checkpoints_dir)
 
 writer = writer.Writer(args)
@@ -160,17 +162,17 @@ cudnn.benchmark = False
 cudnn.deterministic = True
 
 # load dataset
-template_fp = osp.join(args.data_fp, 'template', 'template.obj')
-meshdata = ClsfData(args.data_fp,
-                    template_fp,
-                    split=args.split)
+template_fp = osp.join('./template', 'L_Hipp_template_2922.ply')
+meshdata = SpiralNetDatasets(train_data=args.train_data,
+                             test_data=args.test_data,
+                             template_fp, split=args.split)
 train_loader = DataLoader(meshdata.train_dataset,
                           batch_size=args.batch_size,
                           shuffle=True)
-test_loader = DataLoader(meshdata.test_dataset, batch_size=args.batch_size)
+test_loader = DataLoader(meshdata.test_dataset, batch_size=1, shuffle=False)
 
 # generate/load transform matrices
-transform_fp = osp.join(args.data_fp, 'transform.pkl')
+transform_fp = osp.join('./processed/spiralnet', 'matrices.pkl')
 if not osp.exists(transform_fp):
     print('Generating transform matrices...')
     mesh = Mesh(filename=template_fp)
@@ -208,7 +210,7 @@ up_transform_list = [
     for up_transform in tmp['up_transform']
 ]
 
-model = Classifier(args.in_channels, args.out_channels, args.latent_channels,
+model = SpiralNet(args.in_channels, args.out_channels, args.latent_channels,
            spiral_indices_list, down_transform_list,
            up_transform_list).to(device)
 print('Number of parameters: {}'.format(utils.count_parameters(model)))
