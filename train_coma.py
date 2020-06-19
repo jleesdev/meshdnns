@@ -155,7 +155,7 @@ def main(args):
     for epoch in range(start_epoch, total_epochs + 1):
         print("Training for epoch ", epoch)
         train_loss, train_acc = train(coma, train_loader, len(dataset), optimizer, device)
-        val_loss, val_acc, clsf_rpt = evaluate(coma, output_dir, val_loader, dataset_test, template_mesh, device, epoch, visualize=visualize)
+        val_loss, val_acc, clsf_rpt = evaluate(coma, output_dir, test_loader, dataset_test, template_mesh, device, epoch, visualize=visualize)
 
         writer.add_scalar('data/train_loss', train_loss, epoch)
         writer.add_scalar('data/test_loss', val_loss, epoch)

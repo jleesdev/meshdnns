@@ -14,6 +14,7 @@ from torch_geometric.data import Data, Batch
 from tqdm import tqdm
 import numpy as np
 import openmesh as om
+import pandas as pd
 
 import sys
 sys.path.insert(1, './utils/spiralnet')
@@ -68,20 +69,22 @@ class SpiralNetDataset(InMemoryDataset):
             else :
                 filepaths[dxs[i]].append(fps[i])
 
-        print(self.dtype)
+        if self.train :
+            print('train')
+        else :
+            print('test')
         print('total number of dataset: %d'%(len(df)))
         for key in filepaths.keys() :
             print('%s: %d.'%(key, len(filepaths[key])))
         return filepaths, categories
 
     def process(self):
-        print('Processing...')
         dataset = []
         for dx in self.filepaths :
             for fp in self.filepaths[dx] :
                 mesh = om.read_trimesh(fp)
                 face = torch.from_numpy(mesh.face_vertex_indices()).T.type(torch.long)
-                x = torch.tensor(mesh.points().astype('float32'))
+                x = torch.tensor(mesh.points().astype('float64'))
                 edge_index = torch.cat([face[:2], face[1:], face[::2]], dim=1)
                 edge_index = to_undirected(edge_index)
 
@@ -96,9 +99,9 @@ class SpiralNetDataset(InMemoryDataset):
                 dataset.append(data)
 
         if self.train :
-            torch.save(self.collate(train_data_list), self.processed_paths[0])
+            torch.save(self.collate(dataset), self.processed_paths[0])
         else :
-            torch.save(self.collate(test_data_list), self.processed_paths[1])
+            torch.save(self.collate(dataset), self.processed_paths[1])
 
 
 ############################################################################
@@ -107,7 +110,7 @@ class SpiralNetDatasets(object):
                  train_data,
                  test_data,
                  template_fp,
-                 split='clsfb',
+                 split='clsf',
                  transform=None,
                  pre_transform=None):
         self.train_data = train_data
