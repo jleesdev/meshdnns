@@ -23,5 +23,5 @@ Four different mesh-specific dnn models (CoMA, SpiralNet++, MeshCNN, and MeshNet
 
 * meshcnn
 `$ python train_meshcnn.py --train_data train_set.csv --test_data test_set.csv`  
- to configure the parameters, please consider **utils/meshcnn/base_options.py** and **utils/meshcnn/train_options.py**  
+ to configure the parameters, please consider **utils/meshcnn/base_options.py** and **utils/meshcnn/train_options.py** files.  
  to change the labels (AD:0, CN:1), please consider the variable **type_to_index_map** in **datatsets/meshcnn_dataset.py**.
