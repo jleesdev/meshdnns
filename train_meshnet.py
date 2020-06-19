@@ -6,23 +6,26 @@ from torch.autograd import Variable
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as data
-from config import get_train_config
-from data import ModelNet40
-from data import ADNI2_Dataset
-from models import MeshNet
-from utils import append_feature, calculate_map
 from tensorboardX import SummaryWriter
 import sklearn.metrics
 import numpy as np
 import torch.backends.cudnn as cudnn
 
+import sys
+sys.path.insert(1, './utils/meshnet')
+sys.path.insert(1, './models')
+sys.path.insert(1, './datasets')
+from config import get_train_config
+from meshnet_dataset import MeshNetDataset
+from meshnet_model import MeshNet
+from retrival import append_feature, calculate_map
 
 cfg = get_train_config()
 os.environ['CUDA_VISIBLE_DEVICES'] = cfg['cuda_devices']
 
 
 data_set = {
-    x: ADNI2_Dataset(cfg=cfg['dataset'], part=x) for x in ['train', 'test']
+    x: MeshNetDataset(cfg=cfg['dataset'], part=x) for x in ['train', 'test']
 }
 data_loader = {
     x: data.DataLoader(data_set[x], batch_size=cfg['batch_size'], num_workers=4, shuffle=True, pin_memory=False)
@@ -39,7 +42,7 @@ def train_model(model, criterion, optimizer, scheduler, cfg):
     best_acc = 0.0
     best_map = 0.0
     best_model_wts = copy.deepcopy(model.state_dict())
-    
+
     from datetime import datetime
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
     log_dir = os.path.join('runs', current_time)

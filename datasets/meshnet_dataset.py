@@ -2,30 +2,31 @@ import numpy as np
 import os
 import torch
 import torch.utils.data as data
+import pandas as pd
 
 type_to_index_map = {
-    'ad': 0, 'cn': 1
+    'AD': 0, 'CN': 1
 }
 
 
-class ADNI2_Dataset(data.Dataset):
+class MeshNetDataset(data.Dataset):
 
-    def __init__(self, cfg, part='train'):
+    def __init__(self, cfg, part='train', datapath):
         self.root = cfg['data_root']
         self.augment_data = cfg['augment_data']
         self.max_faces = cfg['max_faces']
         self.part = part
+        self.datapath = datapath
+
+        df = pd.read_csv(datapath)
+        filepaths = df['mesh_fsl']
+        dxs = df['dx']
 
         self.data = []
-        type_list = os.listdir(self.root)
-        if '.ipynb_checkpoints' in type_list :
-            type_list.remove('.ipynb_checkpoints')
-        for type in type_list:
-            type_index = type_to_index_map[type]
-            type_root = os.path.join(os.path.join(self.root, type), part)
-            for filename in os.listdir(type_root):
-                if filename.endswith('.npz'):
-                    self.data.append((os.path.join(type_root, filename), type_index))
+        for file, dx in zip(filepaths, dxs) :
+            _, filename = os.path.split(file)
+            filename = self.root + '/' + filename.split('.')[0] + '.npz'
+            self.data.append(filename, type_to_index_map[dx])
 
     def __getitem__(self, i):
         path, type = self.data[i]
