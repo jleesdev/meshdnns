@@ -1,22 +1,27 @@
 import time
 import datetime
-from options.train_options import TrainOptions
-from data import DataLoader
-from models import create_model
-from util.writer import Writer
-from test import run_test
 import logging
 from pathlib import Path
 from tqdm import tqdm
 import torch.backends.cudnn as cudnn
 import torch
 
+import sys
+sys.path.insert(1, './utils/meshcnn')
+sys.path.insert(1, './models')
+sys.path.insert(1, './datasets')
+from writer import Writer
+from test import run_test
+from train_options import TrainOptions
+from meshcnn_dataset import DataLoader
+from meshcnn_model import ClassifierModel
+
 if __name__ == '__main__':
-    
+
     opt = TrainOptions().parse()
-    
+
     '''CREATE DIR'''
-    log_dir = Path('./logs/')
+    log_dir = Path('./logs/meshcnn/')
     log_dir.mkdir(exist_ok=True)
 
     '''LOG'''
@@ -30,24 +35,24 @@ if __name__ == '__main__':
     logger.info('---------------------------------------------------TRANING---------------------------------------------------')
     logger.info('PARAMETER ...')
     logger.info(opt)
- 
+
     logger.info('Load Dataset ...')
     dataset = DataLoader(opt)
     dataset_size = len(dataset)
-    print('#training meshes = %d' % dataset_size) 
+    print('#training meshes = %d' % dataset_size)
     logger.info('#training meshes = %d', dataset_size)
 
-    model = create_model(opt)
+    model = ClassifierModel(opt)
     num_total_params = sum(p.numel() for p in model.net.parameters())
     num_trainable_params = sum(p.numel() for p in model.net.parameters() if p.requires_grad)
     print('Number of total paramters: %d, number of trainable parameters: %d' % (num_total_params, num_trainable_params))
     logger.info('Number of total paramters: %d, number of trainable parameters: %d', num_total_params, num_trainable_params)
-    
+
     writer = Writer(opt)
     total_steps = 0
     train_start_time = time.time()
     best_tst_acc = 0.0
-    
+
     torch.manual_seed(1)
     cudnn.benchmark = False
     cudnn.deterministic = True
@@ -68,7 +73,7 @@ if __name__ == '__main__':
             epoch_iter += opt.batch_size
             model.set_input(data)
             try:
-                model.optimize_parameters(writer=writer, steps=total_steps)
+                model.optimize_parameters()
             except IndexError:
                 total_steps -= opt.batch_size
                 epoch_iter -= opt.batch_size
@@ -89,9 +94,9 @@ if __name__ == '__main__':
                 model.save_network('latest_net')
 
             iter_data_time = time.time()
-            
+
         writer.plot_loss(loss, epoch, 1, 1)
-            
+
         print('TRAIN ACC [%.3f]'%(writer.acc))
         writer.plot_train_acc(writer.acc, epoch)
         if epoch % opt.save_epoch_freq == 0:
@@ -100,7 +105,7 @@ if __name__ == '__main__':
             model.save_network('latest_net')
             # model.save_network('epoch_%d' % (epoch))
 
-        
+
         model.update_learning_rate()
         if opt.verbose_plot:
             writer.plot_model_wts(model, epoch)
@@ -108,19 +113,19 @@ if __name__ == '__main__':
         if epoch % opt.run_test_freq == 0:
             acc = run_test(epoch)
             writer.plot_acc(acc, epoch)
-        
+
             logger.info('Loss: %f, Acc: %f', loss, acc)
             logger.info('IndexError count - train: %d', heappop_error_train)
             print('End of epoch %d / %d \t Time Taken: %d sec' %
                   (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
             logger.info('End of epoch %d / %d \t Time Taken: %d sec',
                         epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time)
-            
+
             if (acc >= best_tst_acc) and epoch > 5:
                 best_tst_acc = acc
                 model.save_network('%.6f-%04d' % (acc, epoch))
-                print('Saving model....')            
- 
+                print('Saving model....')
+
 
     writer.close()
     train_end_time = time.time()

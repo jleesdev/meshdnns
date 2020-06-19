@@ -28,9 +28,9 @@ def fill_mesh(mesh2fill, file: str, opt):
 
 def get_mesh_path(file: str, num_aug: int):
     filename, _ = os.path.splitext(file)
-    dir_name = os.path.dirname(filename)
+    #dir_name = os.path.dirname(filename)
     prefix = os.path.basename(filename)
-    load_dir = os.path.join(dir_name, 'cache')
+    load_dir = os.path.join('./processed', 'meshcnn')
     load_file = os.path.join(load_dir, '%s_%03d.npz' % (prefix, np.random.randint(0, num_aug)))
     if not os.path.isdir(load_dir):
         os.makedirs(load_dir, exist_ok=True)

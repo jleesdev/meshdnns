@@ -11,25 +11,27 @@ class BaseOptions:
 
     def initialize(self):
         # data params
-        self.parser.add_argument('--dataroot', required=True, help='path to meshes (should have subfolders train, test)')
-        self.parser.add_argument('--dataset_mode', choices={"classification", "segmentation", "autoencoder"}, default='classification')
-        self.parser.add_argument('--ninput_edges', type=int, default=750, help='# of input edges (will include dummy edges)')
+        # self.parser.add_argument('--dataroot', required=True, help='path to meshes (should have subfolders train, test)')
+        self.parser.add_argument('--train_data', type=str, default='pcs_mesh_mask_vols_train_set_1.csv')
+        self.parser.add_argument('--test_data', type=str, default='pcs_mesh_mask_vols_train_set_1.csv')
+        self.parser.add_argument('--dataset_mode', choices={"classification", "segmentation"}, default='classification')
+        self.parser.add_argument('--ninput_edges', type=int, default=8760, help='# of input edges (will include dummy edges)')
         # network params
         self.parser.add_argument('--batch_size', type=int, default=16, help='input batch size')
         self.parser.add_argument('--arch', type=str, default='mconvnet', help='selects network to use') #todo add choices
-        self.parser.add_argument('--resblocks', type=int, default=0, help='# of res blocks')
-        self.parser.add_argument('--fc_n', nargs='+', type=int, default=[100], help='# between fc and nclasses') #todo make generic
-        self.parser.add_argument('--ncf', nargs='+', default=[16, 32, 32], type=int, help='conv filters')
-        self.parser.add_argument('--pool_res', nargs='+', default=[1140, 780, 580], type=int, help='pooling res')
-        self.parser.add_argument('--norm', type=str, default='batch',help='instance normalization or batch normalization or group normalization')
+        self.parser.add_argument('--resblocks', type=int, default=1, help='# of res blocks')
+        self.parser.add_argument('--fc_n', nargs='+', type=int, default=[32], help='# between fc and nclasses') #todo make generic
+        self.parser.add_argument('--ncf', nargs='+', default=[16, 32, 64, 128], type=int, help='conv filters')
+        self.parser.add_argument('--pool_res', nargs='+', default=[4800, 2400, 1200, 600], type=int, help='pooling res')
+        self.parser.add_argument('--norm', type=str, default='group',help='instance normalization or batch normalization or group normalization')
         self.parser.add_argument('--num_groups', type=int, default=16, help='# of groups for groupnorm')
         self.parser.add_argument('--init_type', type=str, default='normal', help='network initialization [normal|xavier|kaiming|orthogonal]')
         self.parser.add_argument('--init_gain', type=float, default=0.02, help='scaling factor for normal, xavier and orthogonal.')
         # general params
         self.parser.add_argument('--num_threads', default=3, type=int, help='# threads for loading data')
         self.parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
-        self.parser.add_argument('--name', type=str, default='debug', help='name of the experiment. It decides where to store samples and models')
-        self.parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
+        self.parser.add_argument('--name', type=str, default='default', help='name of the experiment. It decides where to store samples and models')
+        self.parser.add_argument('--checkpoints_dir', type=str, default='./ckpts/meshcnn/', help='models are saved here')
         self.parser.add_argument('--serial_batches', action='store_true', help='if true, takes meshes in order, otherwise takes them randomly')
         self.parser.add_argument('--seed', type=int, help='if specified, uses seed')
         # visualization params
