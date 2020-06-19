@@ -2,8 +2,8 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-# all 2468 shapes
-top_k = 282
+# the number of test samples or top k samples which have smallest distance
+top_k = 115
 
 
 def append_feature(raw, data, flaten=False):

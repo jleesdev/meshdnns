@@ -7,12 +7,12 @@ def _check_dir(dir, make_dir=True):
     if not osp.exists(dir):
         if make_dir:
             print('Create directory {}'.format(dir))
-            os.mkdir(dir)
+            os.makedirs(dir)
         else:
             raise Exception('Directory not exist: {}'.format(dir))
 
 
-def get_train_config(config_file='config/train_config.yaml'):
+def get_train_config(config_file='cfgs/meshnet_train.yaml'):
     with open(config_file, 'r') as f:
         cfg = yaml.load(f)
 
@@ -22,7 +22,7 @@ def get_train_config(config_file='config/train_config.yaml'):
     return cfg
 
 
-def get_test_config(config_file='config/test_config.yaml'):
+def get_test_config(config_file='cfgs/meshnet_test.yaml'):
     with open(config_file, 'r') as f:
         cfg = yaml.load(f)
 

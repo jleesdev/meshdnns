@@ -11,3 +11,6 @@ Four different mesh-specific dnn models (CoMA, SpiralNet++, MeshCNN, and MeshNet
 `$ python train_coma.py --train_data train_set.csv --test_data test_set.csv`  
 * spiralnet  
 `$ python train_spiralnet.py --train_data train_set.csv --test_data test_set.csv`  
+* meshnet  
+`$ python utils/meshnet/preprocessing --train_data train_set.csv --test_data test_set.csv`  
+`$ python train_meshnet.py --train_data train_set.csv --test_data test_set.csv`  

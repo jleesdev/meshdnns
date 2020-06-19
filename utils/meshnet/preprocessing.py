@@ -19,14 +19,14 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='meshnet data preprocessing')
     parser.add_argument('-trnd', '--train_data', type=str, default='pcs_mesh_mask_vols_train_set_1.csv')
-    parser.add_argument('-tstd', '--test_dat', type=str, default='pcs_mesh_mask_vols_test_set_1.csv')
+    parser.add_argument('-tstd', '--test_data', type=str, default='pcs_mesh_mask_vols_test_set_1.csv')
     args = parser.parse_args()
 
     new_root = './processed/meshnet/'
 
-    if not os.path.exists('./processed')
+    if not os.path.exists('./processed') :
         os.mkdir('./processed')
-    if not os.path.exists(new_root)
+    if not os.path.exists(new_root) :
         os.mkdir(new_root)
 
     train_files = list(pd.read_csv(args.train_data)['mesh_fsl'])

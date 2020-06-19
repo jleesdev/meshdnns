@@ -11,7 +11,7 @@ type_to_index_map = {
 
 class MeshNetDataset(data.Dataset):
 
-    def __init__(self, cfg, part='train', datapath):
+    def __init__(self, cfg, datapath, part='train'):
         self.root = cfg['data_root']
         self.augment_data = cfg['augment_data']
         self.max_faces = cfg['max_faces']
@@ -26,7 +26,7 @@ class MeshNetDataset(data.Dataset):
         for file, dx in zip(filepaths, dxs) :
             _, filename = os.path.split(file)
             filename = self.root + '/' + filename.split('.')[0] + '.npz'
-            self.data.append(filename, type_to_index_map[dx])
+            self.data.append((filename, type_to_index_map[dx]))
 
     def __getitem__(self, i):
         path, type = self.data[i]

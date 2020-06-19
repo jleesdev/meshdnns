@@ -10,6 +10,7 @@ from tensorboardX import SummaryWriter
 import sklearn.metrics
 import numpy as np
 import torch.backends.cudnn as cudnn
+import argparse
 
 import sys
 sys.path.insert(1, './utils/meshnet')
@@ -19,18 +20,6 @@ from config import get_train_config
 from meshnet_dataset import MeshNetDataset
 from meshnet_model import MeshNet
 from retrival import append_feature, calculate_map
-
-cfg = get_train_config()
-os.environ['CUDA_VISIBLE_DEVICES'] = cfg['cuda_devices']
-
-
-data_set = {
-    x: MeshNetDataset(cfg=cfg['dataset'], part=x) for x in ['train', 'test']
-}
-data_loader = {
-    x: data.DataLoader(data_set[x], batch_size=cfg['batch_size'], num_workers=4, shuffle=True, pin_memory=False)
-    for x in ['train', 'test']
-}
 
 torch.manual_seed(1)
 cudnn.benchmark = False
@@ -45,8 +34,8 @@ def train_model(model, criterion, optimizer, scheduler, cfg):
 
     from datetime import datetime
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-    log_dir = os.path.join('runs', current_time)
-    writer = SummaryWriter(log_dir+'-bs64_e300')
+    log_dir = os.path.join('runs/meshnet', 'clsf-' + current_time)
+    writer = SummaryWriter(log_dir+'')
 
     for epoch in range(1, cfg['max_epoch'] + 1):
 
@@ -67,7 +56,7 @@ def train_model(model, criterion, optimizer, scheduler, cfg):
             ft_all, lbl_all = None, None
             preds_list, labels_list = [], []
 
-            for i, (centers, corners, normals, neighbor_index, targets) in enumerate(data_loader[phrase]):
+            for i, (centers, corners, normals, neighbor_index, targets) in enumerate(dataloaders[phrase]):
 
                 optimizer.zero_grad()
 
@@ -95,8 +84,8 @@ def train_model(model, criterion, optimizer, scheduler, cfg):
                     running_loss += loss.item() * centers.size(0)
                     running_corrects += torch.sum(preds == targets.data)
 
-            epoch_loss = running_loss / len(data_set[phrase])
-            epoch_acc = running_corrects.double() / len(data_set[phrase])
+            epoch_loss = running_loss / len(datasets[phrase])
+            epoch_acc = running_corrects.double() / len(datasets[phrase])
 
             if phrase == 'train':
                 print('{} Loss: {:.4f} Acc: {:.4f}'.format(phrase, epoch_loss, epoch_acc))
@@ -104,14 +93,15 @@ def train_model(model, criterion, optimizer, scheduler, cfg):
                 writer.add_scalar('data/train_acc', epoch_acc, epoch)
 
             if phrase == 'test':
+                # print(len(ft_all), len(lbl_all), ft_all.shape, lbl_all.shape)
                 epoch_map = calculate_map(ft_all, lbl_all)
                 if epoch_acc > best_acc:
                     best_acc = epoch_acc
                     best_model_wts = copy.deepcopy(model.state_dict())
                 if epoch_map > best_map:
                     best_map = epoch_map
-                if epoch % 10 == 0:
-                    torch.save(copy.deepcopy(model.state_dict()), 'ckpt_root/{}.pkl'.format(epoch))
+                if epoch % 50 == 0:
+                    torch.save(copy.deepcopy(model.state_dict()), cfg['ckpt_root']+'/{}.pkl'.format(epoch))
 
                 print('{} Loss: {:.4f} Acc: {:.4f} mAP: {:.4f}'.format(phrase, epoch_loss, epoch_acc, epoch_map))
                 clsf_rpt = sklearn.metrics.classification_report(np.concatenate(labels_list, axis=None), np.concatenate(preds_list, axis=None))
@@ -124,6 +114,25 @@ def train_model(model, criterion, optimizer, scheduler, cfg):
 
 
 if __name__ == '__main__':
+    
+    parser = argparse.ArgumentParser(description='Pytorch Trainer for Convolutional Mesh Autoencoders')
+    parser.add_argument('-c', '--conf', default='cfgs/meshnet_train.yaml', help='path of config file')
+    parser.add_argument('-trnd', '--train_data', default='pcs_mesh_mask_vols_train_set_1.csv', help='path where the downloaded data is stored')
+    parser.add_argument('-tstd', '--test_data', default='pcs_mesh_mask_vols_test_set_1.csv', help='path where the downloaded data is stored')
+
+    args = parser.parse_args()
+    
+    cfg = get_train_config(args.conf)
+    os.environ['CUDA_VISIBLE_DEVICES'] = cfg['cuda_devices']
+    
+    datasets = {
+        'train': MeshNetDataset(cfg=cfg['dataset'], datapath=args.train_data, part='train'),
+        'test': MeshNetDataset(cfg=cfg['dataset'], datapath=args.test_data, part='test')
+    }
+    dataloaders = {
+        'train': data.DataLoader(datasets['train'], batch_size=cfg['batch_size'], num_workers=4, shuffle=True, pin_memory=False),
+        'test': data.DataLoader(datasets['test'], batch_size=1, num_workers=4, shuffle=False, pin_memory=False)
+    }
 
     model = MeshNet(cfg=cfg['MeshNet'], require_fea=True)
     model.cuda()
