@@ -1,8 +1,10 @@
 import argparse
 import os
-from util import util
+import sys
 import torch
 
+sys.path.insert(1, './utils/meschnn')
+import util
 
 class BaseOptions:
     def __init__(self):
@@ -22,7 +24,7 @@ class BaseOptions:
         self.parser.add_argument('--resblocks', type=int, default=1, help='# of res blocks')
         self.parser.add_argument('--fc_n', nargs='+', type=int, default=[32], help='# between fc and nclasses') #todo make generic
         self.parser.add_argument('--ncf', nargs='+', default=[16, 32, 64, 128], type=int, help='conv filters')
-        self.parser.add_argument('--pool_res', nargs='+', default=[4800, 2400, 1200, 600], type=int, help='pooling res')
+        self.parser.add_argument('--pool_res', nargs='+', default=[4800, 2400, 1500, 900], type=int, help='pooling res')
         self.parser.add_argument('--norm', type=str, default='group',help='instance normalization or batch normalization or group normalization')
         self.parser.add_argument('--num_groups', type=int, default=16, help='# of groups for groupnorm')
         self.parser.add_argument('--init_type', type=str, default='normal', help='network initialization [normal|xavier|kaiming|orthogonal]')

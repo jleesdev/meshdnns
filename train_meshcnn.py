@@ -6,6 +6,9 @@ from tqdm import tqdm
 import torch.backends.cudnn as cudnn
 import torch
 
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 import sys
 sys.path.insert(1, './utils/meshcnn')
 sys.path.insert(1, './models')
@@ -28,7 +31,7 @@ if __name__ == '__main__':
     logger = logging.getLogger("MeshCNN")
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    file_handler = logging.FileHandler('./logs/train_%s_'%opt.name+ str(datetime.datetime.now().strftime('%Y-%m-%d %H-%M'))+'.txt')
+    file_handler = logging.FileHandler('./logs/meshcnn/train_%s_'%opt.name+ str(datetime.datetime.now().strftime('%Y-%m-%d %H-%M'))+'.txt')
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -37,7 +40,7 @@ if __name__ == '__main__':
     logger.info(opt)
 
     logger.info('Load Dataset ...')
-    dataset = DataLoader(opt)
+    dataset = DataLoader(opt, opt.train_data)
     dataset_size = len(dataset)
     print('#training meshes = %d' % dataset_size)
     logger.info('#training meshes = %d', dataset_size)
@@ -73,7 +76,7 @@ if __name__ == '__main__':
             epoch_iter += opt.batch_size
             model.set_input(data)
             try:
-                model.optimize_parameters()
+                model.optimize_parameters(writer)
             except IndexError:
                 total_steps -= opt.batch_size
                 epoch_iter -= opt.batch_size
@@ -111,7 +114,7 @@ if __name__ == '__main__':
             writer.plot_model_wts(model, epoch)
 
         if epoch % opt.run_test_freq == 0:
-            acc = run_test(epoch)
+            acc = run_test(opt.test_data, epoch)
             writer.plot_acc(acc, epoch)
 
             logger.info('Loss: %f, Acc: %f', loss, acc)

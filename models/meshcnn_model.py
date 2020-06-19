@@ -1,9 +1,25 @@
 # meshcnn_net.py
+
+# import for networks.py and mesh_conv.py
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.nn import init
 import functools
-import torch.nn.functional as F
+from torch.optim import lr_scheduler
+
+# import for mesh_pool.py
+import sys
+sys.path.insert(1, 'utils/meshcnn')
+from mesh_union import MeshUnion
+from threading import Thread
+import numpy as np
+from heapq import heappop, heapify, nlargest
+import copy
+
+# import for mesh_classifier.py
+from os.path import join
+from util import seg_accuracy, print_network
 
 class ClassifierModel:
     """ Class for training Model weights
@@ -65,7 +81,7 @@ class ClassifierModel:
         self.loss = self.criterion(out, self.labels)
         self.loss.backward()
 
-    def optimize_parameters(self):
+    def optimize_parameters(self, writer=False):
         self.optimizer.zero_grad()
         out = self.forward()
         # print(self.labels)
@@ -169,6 +185,20 @@ class NoNorm(nn.Module): #todo with abstractclass and pass
         return x
     def __call__(self, x):
         return self.forward(x)
+    
+def get_scheduler(optimizer, opt):
+    if opt.lr_policy == 'lambda':
+        def lambda_rule(epoch):
+            lr_l = 1.0 - max(0, epoch + 1 + opt.epoch_count - opt.niter) / float(opt.niter_decay + 1)
+            return lr_l
+        scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
+    elif opt.lr_policy == 'step':
+        scheduler = lr_scheduler.StepLR(optimizer, step_size=opt.lr_decay_iters, gamma=0.1)
+    elif opt.lr_policy == 'plateau':
+        scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2, threshold=0.01, patience=5)
+    else:
+        return NotImplementedError('learning rate policy [%s] is not implemented', opt.lr_policy)
+    return scheduler
 
 def init_weights(net, init_type, init_gain):
     def init_func(m):
@@ -209,6 +239,14 @@ def define_classifier(input_nc, ncf, ninput_edges, nclasses, opt, gpu_ids, arch,
     else:
         raise NotImplementedError('Encoder model name [%s] is not recognized' % arch)
     return init_net(net, init_type, init_gain, gpu_ids)
+
+def define_loss(opt):
+    if opt.dataset_mode == 'classification':
+        # loss = torch.nn.NLLLoss()
+        loss = torch.nn.CrossEntropyLoss()
+    elif opt.dataset_mode == 'segmentation':
+        loss = torch.nn.CrossEntropyLoss(ignore_index=-1)
+    return loss
 
 ###################################################################################
 class MeshConv(nn.Module):
@@ -293,11 +331,7 @@ class MeshConv(nn.Module):
         return padded_gemm
 
 ###################################################################################
-from threading import Thread
-from models.layers.mesh_union import MeshUnion
-import numpy as np
-from heapq import heappop, heapify, nlargest
-import copy
+
 class MeshPool(nn.Module):
 
     def __init__(self, target, multi_thread=False):

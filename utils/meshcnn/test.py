@@ -1,22 +1,21 @@
+import numpy as np
+import sklearn.metrics
+
 import sys
 sys.path.insert(1, './utils/meshcnn')
 sys.path.insert(1, './models')
 sys.path.insert(1, './datasets')
 from test_options import TestOptions
 from meshcnn_dataset import DataLoader
-from meshcnn_model import create_model
+from meshcnn_model import ClassifierModel
 from writer import Writer
 
-import numpy as np
-import sklearn.metrics
-
-
-def run_test(epoch=-1):
+def run_test(datapath, epoch=-1):
     print('Running Test')
     opt = TestOptions().parse()
     opt.serial_batches = True  # no shuffle
-    dataset = DataLoader(opt)
-    model = create_model(opt)
+    dataset = DataLoader(opt, datapath)
+    model = ClassifierModel(opt)
     writer = Writer(opt)
     # test
     writer.reset_counter()

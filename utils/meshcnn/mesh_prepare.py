@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import ntpath
+import openmesh as om
 
 
 def fill_mesh(mesh2fill, file: str, opt):
@@ -66,6 +67,10 @@ def fill_from_file(mesh, file):
     mesh.filename = ntpath.split(file)[1]
     mesh.fullfilename = file
     vs, faces = [], []
+    m = om.read_trimesh(file)
+    vs = m.points()
+    faces = m.face_vertex_indices()
+    '''
     f = open(file)
     for line in f:
         line = line.strip()
@@ -83,6 +88,7 @@ def fill_from_file(mesh, file):
     f.close()
     vs = np.asarray(vs)
     faces = np.asarray(faces, dtype=int)
+    '''
     assert np.logical_and(faces >= 0, faces < len(vs)).all()
     return vs, faces
 

@@ -2,9 +2,12 @@ import torch.utils.data
 import numpy as np
 import pickle
 import os
-
 import torch
-from models.layers.mesh import Mesh
+import pandas as pd
+
+import sys
+sys.path.insert(1, 'utils/meshcnn')
+from mesh import Mesh
 
 class BaseDataset(torch.utils.data.Dataset):
 
@@ -26,7 +29,7 @@ class BaseDataset(torch.utils.data.Dataset):
         """
         mean_std_cache = os.path.join(self.processed_dir, 'train_mean_std_cache.p')
         if not os.path.isfile(mean_std_cache):
-            if opt.phase == 'test' :
+            if self.opt.phase == 'test' :
                 raise Exception('train the model first...')
             print('computing mean std from train data...')
             # doesn't run augmentation during m/std computation
@@ -67,8 +70,8 @@ def pad(input_arr, target_length, val=0, dim=1):
 
 class MeshCNNDataset(BaseDataset):
 
-    def __init__(self, opt):
-        BaseDataset.__init__(self, opt, datapath)
+    def __init__(self, opt, datapath):
+        BaseDataset.__init__(self, opt)
         self.opt = opt
         self.device = torch.device('cuda:{}'.format(opt.gpu_ids[0])) if opt.gpu_ids else torch.device('cpu')
         # self.root = opt.dataroot
@@ -88,7 +91,7 @@ class MeshCNNDataset(BaseDataset):
 
         self.data = []
         for file, dx in zip(filepaths, dxs) :
-            self.data.append((file, type_to_index_map[dx]))
+            self.data.append((file, dx, self.type_to_index_map[dx]))
 
         self.nclasses = len(self.type_to_index_map)
         self.size = len(self.data)
@@ -98,8 +101,8 @@ class MeshCNNDataset(BaseDataset):
         opt.input_nc = self.ninput_channels
 
     def __getitem__(self, index):
-        path, label = self.data[index]
-        mesh = Mesh(file=path, opt=self.opt, hold_history=False, export_folder=self.opt.export_folder, label=self.classes[label])
+        path, dx, label = self.data[index]
+        mesh = Mesh(file=path, opt=self.opt, hold_history=False, export_folder=self.opt.export_folder, label=dx)
         meta = {'mesh': mesh, 'label': label}
         # get edge features
         edge_features = mesh.extract_features()

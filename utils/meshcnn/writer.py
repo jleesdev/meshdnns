@@ -67,6 +67,14 @@ class Writer:
     def plot_acc(self, acc, epoch):
         if self.display:
             self.display.add_scalar('data/test_acc', acc, epoch)
+            
+    def plot_reg_loss(self, reg_loss, iters):
+        if self.display:
+            self.display.add_scalar('data/regularization_loss', reg_loss, iters)
+    
+    def plot_train_acc(self, acc, epoch):
+        if self.display:
+            self.display.add_scalar('data/train_acc', acc, epoch)
 
     def reset_counter(self):
         """

@@ -10,7 +10,7 @@ def mkdir(path):
         os.makedirs(path)
 
 MESH_EXTENSIONS = [
-    '.obj',
+    '.obj', '.ply'
 ]
 
 def is_mesh_file(filename):
