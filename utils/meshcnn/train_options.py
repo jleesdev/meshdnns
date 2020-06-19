@@ -1,4 +1,6 @@
-from .base_options import BaseOptions
+import sys
+sys.path.insert(1, './utils/meshcnn')
+from base_options import BaseOptions
 
 class TrainOptions(BaseOptions):
     def initialize(self):

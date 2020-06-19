@@ -19,7 +19,11 @@ class Writer:
         self.ncorrect = 0
         #
         if opt.is_train and not opt.no_vis and SummaryWriter is not None:
-            self.display = SummaryWriter(comment=opt.name)
+            from datetime import datetime
+            current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+            log_dir = os.path.join('runs/meshcnn/', 'clsf-' + current_time)
+            writer = SummaryWriter(log_dir+'_'+opt.name)
+            self.display = writer
         else:
             self.display = None
 

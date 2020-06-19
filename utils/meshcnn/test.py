@@ -1,7 +1,12 @@
-from options.test_options import TestOptions
-from data import DataLoader
-from models import create_model
-from util.writer import Writer
+import sys
+sys.path.insert(1, './utils/meshcnn')
+sys.path.insert(1, './models')
+sys.path.insert(1, './datasets')
+from test_options import TestOptions
+from meshcnn_dataset import DataLoader
+from meshcnn_model import create_model
+from writer import Writer
+
 import numpy as np
 import sklearn.metrics
 
