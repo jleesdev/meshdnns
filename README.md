@@ -1,5 +1,5 @@
 # meshdnns
-Four different mesh-specific dnn models (CoMA, SpiralNet++, MeshCNN, and MeshNet).
+Four different mesh-specific dnn models (CoMA[https://github.com/anuragranj/coma], SpiralNet++[https://github.com/sw-gong/spiralnet_plus], MeshCNN[https://github.com/ranahanocka/MeshCNN/], and MeshNet[https://github.com/iMoonLab/MeshNet]).
 
 #### data samples
 * format: .ply  
